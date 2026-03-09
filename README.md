@@ -108,7 +108,7 @@ _Sheet 4 — MCU: ESP32-S3-WROOM-1-N4 with 10µF and 0.1µF decoupling on the 3.
 
 ## Controls
 
-The device has three physical controls — two potentiometers and a mode slide switch.
+The device has three physical controls: two potentiometers and a mode slide switch.
 
 | Control | Function |
 |---|---|
