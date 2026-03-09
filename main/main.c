@@ -132,11 +132,6 @@ void i2s_task (void *arg) {
                 phaseL += 2.0f * PI * fL / sample_rate;
 
                 if (phaseL >= 2.0f * PI) phaseL -= 2.0f * PI;
-
-                // Only update frequencies at zero crossing of L
-                if (i < BUFFER_SIZE - 1 && sampleL >= 0.0f && sinf(phaseL) < 0.0f) {
-                    fL = base_freq;
-                }
             }
 
             size_t bytes_written;
@@ -334,8 +329,7 @@ float get_phase_diff(float phase_norm) {
     if (phase_norm < 5.0f/8.0f) return PI/2.0f;
     if (phase_norm < 6.0f/8.0f) return PI*5.0f/8.0f;
     if (phase_norm < 7.0f/8.0f) return PI*3.0f/4.0f;
-    if (phase_norm < 1.0f) return PI*7.0f/8.0f;
-    return PI;
+    return PI*7.0f/8.0f;
 }
 
 static esp_err_t uac_output_callback(uint8_t *buf, size_t len, void *arg) {
