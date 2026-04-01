@@ -107,17 +107,17 @@ _Sheet 4 — MCU: ESP32-S3-WROOM-1-N4 with 10µF and 0.1µF decoupling on the 3.
 ### PCB Layout
 
 
-<img width="800" alt="PCB Top Layer" src="https://github.com/user-attachments/assets/20369097-93da-4608-8003-dd4fcb3e33fb" />
+<img width="800" alt="PCB Top Layer" src="https://github.com/user-attachments/assets/64781e78-2c38-4c13-8c90-aded96b61351" />
 
 _Top copper layer showing primary signal and power routing. Stitching vias connect the top and bottom ground pours at regular intervals to minimize ground impedance and keep return current loops short._
 
 
-<img width="800" alt="PCB Bottom Layer" src="https://github.com/user-attachments/assets/297473ba-9b49-482c-accc-0066461cce1c" />
+<img width="800" alt="PCB Bottom Layer" src="https://github.com/user-attachments/assets/ee17ef21-f82d-46ab-86a9-648759e5794d" />
 
 _Bottom copper layer. The continuous ground pour provides a low-impedance return path and acts as an electric field shield across the full board area._
 
 
-<img width="800" alt="PCB 3D View" src="https://github.com/user-attachments/assets/7a405fde-47a3-405e-961c-7ab39e7ee429" />
+<img width="800" alt="PCB 3D View" src="https://github.com/user-attachments/assets/b8baf64e-05e7-4722-a9ec-0bfad10c0a7f" />
 
 _3D render of the assembled board. Controls (phase, frequency, mode) are grouped on the left edge; the DAC and analog outputs are isolated to the right edge away from the MCU and power circuitry._
 
@@ -208,12 +208,22 @@ _Rigol DS1102E oscilloscope showing early firmware output. CH1 (yellow) is the s
 <video src="https://github.com/user-attachments/assets/7f4eb666-647e-48f4-968a-9c4041df8248" controls width="600"></video>
 _Rigol DS1102E in XY mode. 210Hz on both channels with a phase offset producing a rotating ellipse pattern. CH1 (signal generator) on the X axis, CH2 (PCM5102A OUTR) on the Y axis._
 
+
+## Enclosure
+The enclosure was designed in Fusion 360 to fit the PCB. It features cutouts for the two potentiometers, the mode slide switch, and the SSD1306 OLED display, as well as openings for the speaker output jack, USB-C port, and the dual oscilloscope output connectors. Intended for FDM printing in PLA.
+
+STL and STEP files for the box and face plate are available in the `/enclosure` directory.
+
+<img width="1089" height="672" alt="lissajous-box-view2" src="https://github.com/user-attachments/assets/9deb89b6-6855-468b-8fb8-0af21675f2a3" />
+_Fusion 360 render of the enclosure._
+
 ## Roadmap
 - [x] Complete PCB layout in Altium Designer
+- [x] Order PCB from JLCPCB and components from Mouser
 - [ ] Fabricate and assemble first PCB revision
 - [ ] Validate both DAC output channels on hardware
 - [x] Explore OLED display for parameter readout
   - [x] Add Hardware to Schematic
   - [x] Program Display
   - [ ] Test Display
-- [ ] Enclosure design
+- [x] Enclosure design
