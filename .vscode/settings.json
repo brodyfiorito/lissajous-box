@@ -16,7 +16,7 @@
     "--query-driver=**",
     "--compile-commands-dir=c:\\Users\\brody\\dac-esp32\\build"
   ],
-  "idf.portWin": "COM4",
+  "idf.portWin": "COM7",
   "idf.flashType": "UART",
   "idf.currentSetup": "C:/Espressif/frameworks/esp-idf-v5.5.2-2/"
 }
