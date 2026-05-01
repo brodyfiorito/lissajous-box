@@ -208,6 +208,12 @@ _Rigol DS1102E oscilloscope showing early firmware output. CH1 (yellow) is the s
 <video src="https://github.com/user-attachments/assets/7f4eb666-647e-48f4-968a-9c4041df8248" controls width="600"></video>
 _Rigol DS1102E in XY mode. 210Hz on both channels with a phase offset producing a rotating ellipse pattern. CH1 (signal generator) on the X axis, CH2 (PCM5102A OUTR) on the Y axis._
 
+### First PCB Revision
+<img width="3024" height="4032" alt="firstrev" src="https://github.com/user-attachments/assets/1a4a9d5a-2a23-4872-9557-63619af2fa13" />
+
+_Assembled first revision PCB. The NPN auto-reset transistors (SOT-1123) 
+were lost during reflow and could not be recovered by hand soldering due 
+to package size. Manual bootloader entry required for programming._
 
 ## Enclosure
 The enclosure was designed in Fusion 360 to fit the PCB. It features cutouts for the two potentiometers, the mode slide switch, and the SSD1306 OLED display, as well as openings for the speaker output jack, USB-C port, and the dual oscilloscope output connectors. Intended for FDM printing in PLA.
@@ -220,7 +226,7 @@ _Fusion 360 render of the enclosure._
 ## Roadmap
 - [x] Complete PCB layout in Altium Designer
 - [x] Order PCB from JLCPCB and components from Mouser
-- [ ] Fabricate and assemble first PCB revision
+- [x] Fabricate and assemble first PCB revision (auto-reset circuit non-functional — SOT-1123 transistors lost during reflow)
 - [ ] Validate both DAC output channels on hardware
 - [x] Explore OLED display for parameter readout
   - [x] Add Hardware to Schematic
