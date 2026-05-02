@@ -222,14 +222,3 @@ STL and STEP files for the box and face plate are available in the `/enclosure` 
 
 <img width="1089" height="672" alt="lissajous-box-view2" src="https://github.com/user-attachments/assets/9deb89b6-6855-468b-8fb8-0af21675f2a3" />
 _Fusion 360 render of the enclosure._
-
-## Roadmap
-- [x] Complete PCB layout in Altium Designer
-- [x] Order PCB from JLCPCB and components from Mouser
-- [x] Fabricate and assemble first PCB revision (auto-reset circuit non-functional — SOT-1123 transistors lost during reflow)
-- [ ] Validate both DAC output channels on hardware
-- [x] Explore OLED display for parameter readout
-  - [x] Add Hardware to Schematic
-  - [x] Program Display
-  - [ ] Test Display
-- [x] Enclosure design
