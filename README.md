@@ -53,7 +53,7 @@ It's a classic technique for visualizing the relationship between two signals, a
 
 
 ### Schematics
-All schematics were captured in Altium Designer. PCB layout is complete and awaiting fabrication.
+All schematics were captured in Altium Designer.
 
 <img width="800" alt="Sheet 1" src="https://github.com/user-attachments/assets/ebac3af3-9716-4182-a427-cd7d4e718d77" />
 
@@ -208,12 +208,26 @@ _Rigol DS1102E oscilloscope showing early firmware output. CH1 (yellow) is the s
 <video src="https://github.com/user-attachments/assets/7f4eb666-647e-48f4-968a-9c4041df8248" controls width="600"></video>
 _Rigol DS1102E in XY mode. 210Hz on both channels with a phase offset producing a rotating ellipse pattern. CH1 (signal generator) on the X axis, CH2 (PCM5102A OUTR) on the Y axis._
 
-### First PCB Revision
-<img width="3024" height="4032" alt="firstrev" src="https://github.com/user-attachments/assets/1a4a9d5a-2a23-4872-9557-63619af2fa13" />
+### PCB Assembly
 
-_Assembled first revision PCB. The NPN auto-reset transistors (SOT-1123) 
-were lost during reflow and could not be recovered by hand soldering due 
-to package size. Manual bootloader entry required for programming._
+PCBs were fabricated by JLCPCB (2-layer, HASL, 1.6mm). Solder paste was applied manually using a stencil, SMD components were placed by hand and reflowed. Through-hole components (potentiometers, slide switch, OLED header, output headers) were hand soldered after reflow.
+
+<img width="1000" alt="taped" src="https://github.com/user-attachments/assets/46405ae8-5db0-4d23-9128-41ff8e58f245" />
+
+_Solder paste applied prior to reflow. Board taped down to prevent shifting._
+
+
+<img width="1000" alt="reflow" src="https://github.com/user-attachments/assets/4af56de6-3b9d-449c-808a-ec2aad3e5633" />
+
+_Post-reflow. Through-hole components not yet installed._
+
+
+<img width="1000" alt="firstrev" src="https://github.com/user-attachments/assets/1a4a9d5a-2a23-4872-9557-63619af2fa13" />
+
+_Fully assembled and powered up. Power LED on, wires soldered to ESP32 for manual bootloader entry while programming, wires replaced with jumpers after firmware was validated._
+
+
+The SOT-1123 NPN transistors used for the CP2102 auto-reset circuit were lost during reflow and could not be recovered. The package is too small to place reliably by hand. Manual bootloader entry (hold BOOT, cycle reset) is required for programming.
 
 ## Enclosure
 The enclosure was designed in Fusion 360 to fit the PCB. It features cutouts for the two potentiometers, the mode slide switch, and the SSD1306 OLED display, as well as openings for the speaker output jack, USB-C port, and the dual oscilloscope output connectors. Intended for FDM printing in PLA.
@@ -222,3 +236,5 @@ STL and STEP files for the box and face plate are available in the `/enclosure` 
 
 <img width="1089" height="672" alt="lissajous-box-view2" src="https://github.com/user-attachments/assets/9deb89b6-6855-468b-8fb8-0af21675f2a3" />
 _Fusion 360 render of the enclosure._
+
+
