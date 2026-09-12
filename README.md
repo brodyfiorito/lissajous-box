@@ -195,6 +195,9 @@ The firmware is written in Embedded C using the ESP-IDF framework with FreeRTOS.
 
 Built with ESP-IDF v5.5.2
 
+### Base Frequency Selection
+The base frequency is 210Hz against a 44.1kHz sample rate, which is exactly 210 samples per cycle. Choosing a base frequency that divides evenly into the sample rate matters more than the specific value: any fractional remainder leaves a sub-sample timing error that accumulates cycle over cycle, and because the Lissajous figure is a picture of the phase relationship between the two channels, that error shows up directly as a figure that slowly precesses instead of standing still. See [Troubleshooting](#firmware-bring-up-and-troubleshooting) below.
+
 ## Development
 ### Devkit Prototype
 Initial development and firmware validation were done on an ESP32-S3 devkit connected to a PCM5102A breakout board. During testing, the left channel output of the PCM5102A breakout was found to be non-functional. The right channel operated correctly. To rule out a firmware bug, the left and right channels were swapped in software, confirming the issue was a hardware fault on the breakout module rather than anything in the code. A bench signal generator was substituted as the left channel input to the oscilloscope, allowing firmware validation and Lissajous figure generation to continue. Outside of the broken channel, the devkit setup was used to fully validate the signal generation algorithm, I²S configuration, and oscilloscope output before committing to PCB layout.
@@ -207,6 +210,77 @@ _Rigol DS1102E oscilloscope showing early firmware output. CH1 (yellow) is the s
 
 <video src="https://github.com/user-attachments/assets/7f4eb666-647e-48f4-968a-9c4041df8248" controls width="600"></video>
 _Rigol DS1102E in XY mode. 210Hz on both channels with a phase offset producing a rotating ellipse pattern. CH1 (signal generator) on the X axis, CH2 (PCM5102A OUTR) on the Y axis._
+
+### Firmware Bring-Up and Troubleshooting
+
+Bring-up was done in order — supply rails, then I²S clocking, then the output waveforms — rather than by probing around. The Lissajous figure itself is a useful test signal: a 1:1 ratio at 90° should be a stationary circle, so anything wrong with channel amplitude matching, phase, or timing distorts the figure in a characteristic way. Every fault below was found on the devkit before the PCB was laid out.
+
+#### No output — I²S clock configuration
+The DAC produced nothing on either channel initially. The PCM5102A breakout ties SCK to ground internally, which puts the part in its internal-PLL mode and means it must not be fed an external master clock. Driving MCLK from the ESP32 anyway prevented the PLL from locking. The fix was to set MCLK to `I2S_GPIO_UNUSED` in the channel config, remove the manual `gpio_config()` calls that were being applied to the I²S pins (the I²S driver configures them itself), and bond the devkit and breakout grounds together rather than relying on separate supply returns.
+
+#### Watchdog resets
+Two separate causes. First, the `PI` constant was defined without an `f` suffix, which promoted the entire per-sample sine computation to double precision — the ESP32-S3 has no double-precision FPU, so the buffer fill loop no longer finished within its budget. Second, `ESP_LOGI` calls left inside the per-sample loop were writing to UART thousands of times per buffer. Adding the `f` suffix and pulling logging out of the inner loop resolved both.
+
+#### Silent output before the first ADC read
+`freqRatio` and `phaseDiff` were declared as `volatile float` globals with no initializer, so they were zero until `adc_task` completed its first read. With `freqRatio` at zero, the right channel step size was zero and its accumulator never advanced, producing a DC level instead of a sine. Initializing them to `1.0f` and `PI / 2.0f` means the I²S task generates a valid signal from the first buffer.
+
+#### Precessing figure
+With both channels at the same frequency and a fixed phase offset, the figure should be completely stationary. Instead it smeared into a blob. The base frequency at the time was 200Hz, which is 220.5 samples per cycle at 44.1kHz — the half-sample remainder accumulated as a slowly growing phase error between the channels, rotating the ellipse continuously. Moving the base frequency to 210Hz (exactly 210 samples per cycle) locked the figure in place.
+
+#### Discontinuities at buffer boundaries
+`freqRatio` and `phaseDiff` were being read inside the per-sample loop, so `adc_task` could change them partway through a buffer fill and split one buffer across two different parameter sets. Both are now snapshotted once at the top of each buffer fill and not re-read until the next one. Separately, the two accumulators were advancing independently, which allowed them to drift apart over long runtimes; the right channel phase is now derived from the left rather than accumulated on its own.
+
+#### Periodic spikes on the sine output — phase accumulator
+The most instructive fault. The output carried sharp spikes riding on an otherwise clean sine, frequent enough to destabilize the scope's frequency readout. Mains coupling was the obvious suspect: this was a breadboard with long jumper leads, and real 60Hz pickup had already turned up earlier in the project on a floating output.
+
+The spectrum settled it. Coupled mains is an independent signal, so its energy lands at 60Hz and multiples of 60Hz, which are incommensurate with a 210Hz fundamental. The FFT instead showed a dip at 60Hz and energy at exact multiples of 210Hz. Harmonically related energy means the waveform's own shape is wrong — distortion generated inside the signal chain, periodic at the signal rate — rather than something unrelated being added to it from outside. A sharp, narrow glitch occurring once per output cycle spreads energy broadly across the harmonic series, which is exactly the signature observed.
+
+That narrowed it to the generation path, and the time-domain trace confirmed it: the waveform was snapping back to θ = 0 rather than wrapping smoothly. The accumulator was being reset instead of reduced modulo 2π, so every wrap threw away the fractional phase advance and inserted a discontinuity. Wrapping by subtracting 2π when the accumulator passes it, and snapshotting parameters per buffer as described above, removed the spikes.
+
+The general form is worth keeping on the bench: **harmonically related energy points at your own signal chain; unrelated frequencies point at the outside world.**
+
+<img width="800" alt="accumulator-error" src="https://github.com/user-attachments/assets/30ca36a0-0914-4e9c-960c-e03a77f064a9" />
+
+
+_Phase accumulator resetting instead of wrapping. CH2 (blue) is OUTR from the PCM5102A — the trace climbs and then snaps back discontinuously once per cycle instead of turning over smoothly. CH1 (yellow) is the bench signal generator reference at 209.994Hz. Note that the FFT shown in the lower pane is sourced from CH1, not CH2 — this capture documents the time-domain reset, not the harmonic spectrum that ruled out mains coupling._
+
+#### ADC filtering
+The exponential moving average on the pot readings had its coefficients inverted — 5% previous value, 95% new sample — which is effectively no filtering, and the displayed ratio and phase jittered constantly. Corrected to 95% previous, 5% new, with a hysteresis window on top so the output only snaps to a new ratio or phase step once the pot has clearly moved into it.
+
+#### Dead code
+A zero-crossing block that reassigned `fL = base_freq` inside the buffer fill loop was removed. It was a leftover from an earlier attempt at dynamic frequency updates and did nothing, since `fL` never changes; the phase accumulator needs no zero-crossing alignment to stay stable.
+
+### Validated Output
+
+Captures taken after the firmware fixes above, on the Rigol DS1102E in XY mode. CH1 on the X axis at 950mV/div, CH2 on the Y axis at 100mV/div, 100.0kSa. Each figure is stationary rather than drifting, which is the real result — a stable figure means both channels agree on frequency and hold a constant phase relationship indefinitely.
+
+<img width="800" alt="1:1 ratio, 45 degree phase offset" src="https://github.com/user-attachments/assets/21c7207d-8f44-413e-b6b6-c6a7b9441825" />
+
+
+_1:1 ratio at 45° phase offset — a tilted ellipse. At 0° this collapses to a diagonal line and at 90° it opens into a circle, so the tilt and openness of the ellipse read directly as the phase offset between channels._
+
+
+<img width="800" alt="1:2 ratio, 0 degree phase offset" src="https://github.com/user-attachments/assets/4d010a38-0fc2-4a16-ad96-b2afef31440e" />
+
+
+_1:2 ratio at 0° phase offset — horizontal figure eight. The two lobes are symmetric and the crossing point sits centered, indicating matched amplitude between channels._
+
+
+<img width="800" alt="1:3 ratio, 0 degree phase offset" src="https://github.com/user-attachments/assets/2d4e773b-b0b4-46de-9d26-560883301ae9" />
+
+
+_1:3 ratio at 0° phase offset. At zero phase the figure is degenerate: the curve doubles back on itself and is retraced in both directions rather than enclosing separate lobes, so the trace appears as a single open path._
+
+
+<img width="800" alt="1:3 ratio, 15 degree phase offset" src="https://github.com/user-attachments/assets/6eea5918-3299-480c-ae7e-d3cc67a23fd4" />
+
+_1:3 ratio at 15°. Introducing phase separates the outbound and return paths, and the degenerate curve begins to open into distinct loops._
+
+
+<img width="800" alt="1:3 ratio, 30 degree phase offset" src="https://github.com/user-attachments/assets/bcd194a0-ffbf-4606-98c0-21e55748469e" />
+
+_1:3 ratio at 30°. The loops are fully separated. Sweeping phase at a fixed ratio walks the figure continuously between the degenerate and fully open forms._
+
 
 ### PCB Assembly
 
@@ -236,5 +310,3 @@ STL and STEP files for the box and face plate are available in the `/enclosure` 
 
 <img width="1089" height="672" alt="lissajous-box-view2" src="https://github.com/user-attachments/assets/9deb89b6-6855-468b-8fb8-0af21675f2a3" />
 _Fusion 360 render of the enclosure._
-
-
